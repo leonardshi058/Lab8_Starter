@@ -9,7 +9,13 @@ self.addEventListener('install', function (event) {
     caches.open(CACHE_NAME).then(function (cache) {
       // B6. TODO - Add all of the URLs from RECIPE_URLs here so that they are
       //            added to the cache when the ServiceWorker is installed
-      return cache.addAll([]);
+      return cache.addAll([
+        '/',
+        '/index.html',
+        '/assets/styles/main.css',
+        '/assets/scripts/main.js',
+        '/assets/images/icons/icon-192x192.png'
+      ]);
     })
   );
 });
@@ -37,4 +43,20 @@ self.addEventListener('fetch', function (event) {
   // B8. TODO - If the request is in the cache, return with the cached version.
   //            Otherwise fetch the resource, add it to the cache, and return
   //            network response.
+  event.respondWith(
+    caches.match(event.request).then(function (response) {
+      if (response) {
+        return response;
+      }
+      return fetch(event.request).then(function (networkResponse) {
+        return caches.open(CACHE_NAME).then(function (cache) {
+          cache.put(event.request, networkResponse.clone());
+          return networkResponse;
+        });
+      }).catch(function (error) {
+        console.error('Fetching failed:', error);
+        throw error;
+      });
+    })
+  );
 });
